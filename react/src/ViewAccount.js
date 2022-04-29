@@ -5,9 +5,18 @@ import "./assets/fonts/fontawesome5-overrides.min.css";
 class ViewAccount extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      savingsList: [],
+      checkingList: [],
+      marketList: [],
+      loanList: []
+    }
   }
 
   componentDidMount() {
+    if(sessionStorage.getItem("ssn") == null){
+      window.location.href = "./";
+    }
     const link1 = document.createElement("link");
     const link2 = document.createElement("link");
     const link3 = document.createElement("link");
@@ -27,6 +36,27 @@ class ViewAccount extends React.Component {
     document.body.appendChild(link2);
     document.body.appendChild(link3);
     document.body.appendChild(link4);
+    this.fetchData();
+  }
+
+  async fetchData(){
+    let response = await fetch(
+      "http://localhost/listAccounts",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ssn: sessionStorage.getItem('ssn')
+        }),
+      }
+    ).catch((err) => console.log(err));
+    let json = await response.json();
+    this.setState({ savingsList: json.savings });
+    this.setState({ checkingList: json.checking });
+    this.setState({ marketList: json.market });
+    this.setState({ loanList: json.loans });
   }
 
   render() {
@@ -78,7 +108,7 @@ class ViewAccount extends React.Component {
                 <h3 className="text-dark mb-4">Account Information</h3>
                 <div className="card shadow">
                   <div className="card-header py-3">
-                    <p className="text-primary m-0 fw-bold">Accounts List</p>
+                    <p className="text-primary m-0 fw-bold">Savings Accounts</p>
                   </div>
                   <div className="card-body">
                     <div
@@ -91,18 +121,20 @@ class ViewAccount extends React.Component {
                         <thead>
                           <tr>
                             <th>Account Number</th>
-                            <th>Interest Rate</th>
                             <th>Balance</th>
+                            <th>Interest Rate</th>
                             <th>Last accessed date</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td>########</td>
-                            <td>1.00%</td>
-                            <td>$1,023,456</td>
-                            <td>04/25/2022</td>
-                          </tr>
+                          {this.state.savingsList.map((item) => {
+                            return (<tr>
+                              <td>{item[0]}</td>
+                              <td>{item[1]}</td>
+                              <td>{item[2]}</td>
+                              <td>{item[3].split("T")[0]}</td>
+                            </tr>);
+                          })}
                         </tbody>
                         <tfoot>
                           <tr>
@@ -113,12 +145,12 @@ class ViewAccount extends React.Component {
                             </td>
                             <td>
                               <strong>
-                                Interest Rate<br></br>
+                                Balance<br></br>
                               </strong>
                             </td>
                             <td>
                               <strong>
-                                Balance<br></br>
+                                Interest Rate<br></br>
                               </strong>
                             </td>
                             <td>
@@ -138,7 +170,231 @@ class ViewAccount extends React.Component {
                           role="status"
                           aria-live="polite"
                         >
-                          Showing 1 Account
+                          Showing {this.state.savingsList.length} Account(s)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="card shadow" style={{ marginTop: "1.5rem" }}>
+                  <div className="card-header py-3">
+                    <p className="text-primary m-0 fw-bold">Checking Accounts</p>
+                  </div>
+                  <div className="card-body">
+                    <div
+                      className="table-responsive table mt-2"
+                      id="dataTable"
+                      role="grid"
+                      aria-describedby="dataTable_info"
+                    >
+                      <table className="table my-0" id="dataTable">
+                        <thead>
+                          <tr>
+                            <th>Account Number</th>
+                            <th>Balance</th>
+                            <th>Overdraft Fee</th>
+                            <th>Last accessed date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {this.state.checkingList.map((item) => {
+                            return (<tr>
+                              <td>{item[0]}</td>
+                              <td>{item[1]}</td>
+                              <td>{item[2]}</td>
+                              <td>{item[3].split("T")[0]}</td>
+                            </tr>);
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td>
+                              <strong>
+                                Account Number<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Balance<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Overdraft Fee<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Last accessed date<br></br>
+                              </strong>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-6 align-self-center">
+                        <p
+                          id="dataTable_info"
+                          className="dataTables_info"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          Showing {this.state.checkingList.length} Account(s)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="card shadow" style={{ marginTop: "1.5rem" }}>
+                  <div className="card-header py-3">
+                    <p className="text-primary m-0 fw-bold">Money Market Accounts</p>
+                  </div>
+                  <div className="card-body">
+                    <div
+                      className="table-responsive table mt-2"
+                      id="dataTable"
+                      role="grid"
+                      aria-describedby="dataTable_info"
+                    >
+                      <table className="table my-0" id="dataTable">
+                        <thead>
+                          <tr>
+                            <th>Account Number</th>
+                            <th>Balance</th>
+                            <th>Variable Interest Rate</th>
+                            <th>Last accessed date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {this.state.marketList.map((item) => {
+                            return (<tr>
+                              <td>{item[0]}</td>
+                              <td>{item[1]}</td>
+                              <td>{item[2]}</td>
+                              <td>{item[3].split("T")[0]}</td>
+                            </tr>);
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td>
+                              <strong>
+                                Account Number<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Balance<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Variable Interest Rate<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Last accessed date<br></br>
+                              </strong>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-6 align-self-center">
+                        <p
+                          id="dataTable_info"
+                          className="dataTables_info"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          Showing {this.state.marketList.length} Account(s)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="card shadow" style={{ marginTop: "1.5rem" }}>
+                  <div className="card-header py-3">
+                    <p className="text-primary m-0 fw-bold">Loans Accounts</p>
+                  </div>
+                  <div className="card-body">
+                    <div
+                      className="table-responsive table mt-2"
+                      id="dataTable"
+                      role="grid"
+                      aria-describedby="dataTable_info"
+                    >
+                      <table className="table my-0" id="dataTable">
+                        <thead>
+                          <tr>
+                            <th>Account Number</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                            <th>Interest Rate</th>
+                            <th>Monthly Repayment</th>
+                            <th>Last accessed date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {this.state.loanList.map((item) => {
+                            return (<tr>
+                              <td>{item[0]}</td>
+                              <td>{item[1]}</td>
+                              <td>{item[2]}</td>
+                              <td>{item[3]}</td>
+                              <td>{item[4]}</td>
+                              <td>{item[5].split("T")[0]}</td>
+                            </tr>);
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td>
+                              <strong>
+                                Account Number<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Amount<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Balance<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Interest Rate<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Monthly Repayment<br></br>
+                              </strong>
+                            </td>
+                            <td>
+                              <strong>
+                                Last accessed date<br></br>
+                              </strong>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-6 align-self-center">
+                        <p
+                          id="dataTable_info"
+                          className="dataTables_info"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          Showing {this.state.loanList.length} Account(s)
                         </p>
                       </div>
                     </div>

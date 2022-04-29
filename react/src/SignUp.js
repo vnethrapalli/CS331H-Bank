@@ -49,8 +49,6 @@ class SignUp extends React.Component {
         email: email,
         firstname: this.state.firstName,
         lastname: this.state.lastName,
-        password: this.state.password,
-        email: email,
         address: this.state.address,
         ssn: this.state.ssn,
         password: this.state.password,
@@ -61,9 +59,10 @@ class SignUp extends React.Component {
     if (json.data != "Success") {
       this.setState({ errorMessage: json.data });
     } else {
-      sessionStorage.setItem("firstName", json.firstname);
-      sessionStorage.setItem("lastName", json.lastname);
+      sessionStorage.setItem("firstName", this.state.firstName);
+      sessionStorage.setItem("lastName", this.state.lastName);
       sessionStorage.setItem("email", email);
+      sessionStorage.setItem("ssn", this.state.ssn);
       window.location.href = "addAccount";
     }
   }

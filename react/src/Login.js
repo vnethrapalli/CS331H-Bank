@@ -55,6 +55,7 @@ class Login extends React.Component {
       sessionStorage.setItem("email", email);
       sessionStorage.setItem("firstName", json.firstname);
       sessionStorage.setItem("lastName", json.lastname);
+      sessionStorage.setItem("ssn", json.ssn);
       window.location = "addAccount";
     }
   }

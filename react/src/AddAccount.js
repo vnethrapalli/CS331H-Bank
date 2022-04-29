@@ -5,9 +5,22 @@ import "./assets/fonts/fontawesome5-overrides.min.css";
 class AddAccount extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      branchNum: -1,
+      showDropdownClass: "dropdown-menu",
+      showDropdownClass2: "dropdown-menu",
+      branchList: [[]],
+      accountTypeSelection: -1,
+      accountTypes: ["Savings", "Checking", "Money Market", "Loan"],
+      amount: "0",
+      message: ""
+    }
   }
 
   componentDidMount() {
+    if (sessionStorage.getItem("ssn") == null) {
+      window.location.href = "./";
+    }
     const link1 = document.createElement("link");
     const link2 = document.createElement("link");
     const link3 = document.createElement("link");
@@ -27,6 +40,75 @@ class AddAccount extends React.Component {
     document.body.appendChild(link2);
     document.body.appendChild(link3);
     document.body.appendChild(link4);
+    this.fetchBranches();
+  }
+
+  async fetchBranches() {
+    let response = await fetch(
+      "http://localhost/getBranches",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      }
+    ).catch((err) => console.log(err));
+    let json = await response.json();
+    this.setState({ branchList: json.result });
+  }
+
+  toggleMenu() {
+    this.setState({ showDropdownClass: this.state.showDropdownClass == "dropdown-menu" ? "dropdown-menu show" : "dropdown-menu" })
+  }
+
+  toggleMenu2() {
+    this.setState({ showDropdownClass2: this.state.showDropdownClass2 == "dropdown-menu" ? "dropdown-menu show" : "dropdown-menu" })
+  }
+
+  selectBranch(e) {
+    this.setState({ showDropdownClass: "dropdown-menu" })
+    this.setState({ branchNum: parseInt(e.target.id.substring(9)) })
+  }
+
+  selectAccount(e) {
+    this.setState({ showDropdownClass2: "dropdown-menu" })
+    this.setState({ accountTypeSelection: parseInt(e.target.id.substring(11)) })
+  }
+
+  async submitAccount(e) {
+    e.preventDefault();
+    if (this.state.branchNum == -1) {
+      this.setState({ message: "Invalid branch" });
+    } else if (this.state.accountTypeSelection == -1) {
+      this.setState({ message: "Invalid account type" });
+    } else if (this.state.amount == "") {
+      this.setState({ amount: "0" })
+    } else if (!/^[0-9]+(\.[0-9]{2})*$/.test(this.state.amount)) {
+      this.setState({ message: "Invalid amount" });
+    } else {
+      this.setState({ message: "Loading..." });
+      let response = await fetch(
+        "http://localhost/addAccount",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            branchid: this.state.branchList[this.state.branchNum][0],
+            branchname: this.state.branchList[this.state.branchNum][1],
+            ssn: sessionStorage.getItem("ssn"),
+            amount: this.state.amount,
+            accounttype: this.state.accountTypeSelection
+          }),
+        }
+      ).catch((err) => console.log(err));
+      if (response.ok) {
+        this.setState({ message: "Account added!" });
+      } else {
+        this.setState({ message: "Error occured" });
+      }
+    }
   }
 
   render() {
@@ -142,7 +224,7 @@ class AddAccount extends React.Component {
                                       className="form-control"
                                       type="text"
                                       id="first_name"
-                                      placeholder="John"
+                                      placeholder={sessionStorage.getItem("firstName")}
                                       name="first_name"
                                       readOnly={true}
                                     ></input>
@@ -157,7 +239,7 @@ class AddAccount extends React.Component {
                                       className="form-control"
                                       type="text"
                                       id="last_name"
-                                      placeholder="Doe"
+                                      placeholder={sessionStorage.getItem("lastName")}
                                       name="last_name"
                                       readOnly={true}
                                     ></input>
@@ -172,10 +254,25 @@ class AddAccount extends React.Component {
                                     </label>
                                     <input
                                       className="form-control"
-                                      type="email"
+                                      type="text"
                                       id="email"
-                                      placeholder="user@example.com"
+                                      placeholder={sessionStorage.getItem("email")}
                                       name="email"
+                                      readOnly={true}
+                                    ></input>
+                                  </div>
+                                </div>
+                                <div className="col">
+                                  <div className="mb-3">
+                                    <label className="form-label">
+                                      <strong>SSN</strong>
+                                    </label>
+                                    <input
+                                      className="form-control"
+                                      type="text"
+                                      id="ssn"
+                                      placeholder={"XXX-XX-" + sessionStorage.getItem("ssn").substring(5)}
+                                      name="ssn"
                                       readOnly={true}
                                     ></input>
                                   </div>
@@ -205,16 +302,18 @@ class AddAccount extends React.Component {
                                         aria-expanded="false"
                                         data-bs-toggle="dropdown"
                                         type="button"
+                                        onClick={this.toggleMenu.bind(this)}
                                       >
-                                        Dropdown{" "}
+                                        {this.state.branchNum == -1 ? "Branch Name..." : `${this.state.branchList[this.state.branchNum][1]} ${this.state.branchList[this.state.branchNum][0]}`}
                                       </button>
-                                      <div className="dropdown-menu">
-                                        <a className="dropdown-item" href="#">
-                                          Newark 1
-                                        </a>
-                                        <a className="dropdown-item" href="#">
-                                          Woodbridge 2
-                                        </a>
+                                      <div className={this.state.showDropdownClass}>
+                                        {
+                                          this.state.branchList.map((item, index) => {
+                                            return (<a className="dropdown-item" id={`branchNum${index}`} onClick={this.selectBranch.bind(this)}>
+                                              {`${item[1]} ${item[0]}`}
+                                            </a>);
+                                          })
+                                        }
                                       </div>
                                     </div>
                                   </div>
@@ -227,10 +326,53 @@ class AddAccount extends React.Component {
                                     <input
                                       className="form-control"
                                       type="text"
-                                      id="country"
-                                      placeholder="Name of Bank"
-                                      name="country"
+                                      placeholder={this.state.branchNum == -1 ? "Bank Name" : this.state.branchList[this.state.branchNum][2]}
                                       readOnly={true}
+                                    ></input>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="row">
+                                <div className="col">
+                                  <div className="mb-3">
+                                    <label className="form-label">
+                                      <strong>Account Types</strong>
+                                    </label>
+                                    <div className="dropdown">
+                                      <button
+                                        className="btn btn-primary dropdown-toggle"
+                                        aria-expanded="false"
+                                        data-bs-toggle="dropdown"
+                                        type="button"
+                                        onClick={this.toggleMenu2.bind(this)}
+                                      >
+                                        {this.state.accountTypeSelection == -1 ? "Account Type..." : `${this.state.accountTypes[this.state.accountTypeSelection]}`}
+                                      </button>
+                                      <div className={this.state.showDropdownClass2}>
+                                        {
+                                          this.state.accountTypes.map((item, index) => {
+                                            return (<a className="dropdown-item" id={`accountType${index}`} onClick={this.selectAccount.bind(this)}>
+                                              {`${item}`}
+                                            </a>);
+                                          })
+                                        }
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="col">
+                                  <div className="mb-3">
+                                    <label className="form-label">
+                                      <strong>{this.state.accountTypeSelection == 3 ? "Loan Amount" : "Deposit Amount"}</strong>
+                                    </label>
+                                    <input
+                                      className="form-control"
+                                      type="text"
+                                      id="amount"
+                                      onChange={(event) => {
+                                        this.setState({ amount: event.target.value });
+                                      }}
                                     ></input>
                                   </div>
                                 </div>
@@ -238,12 +380,17 @@ class AddAccount extends React.Component {
                               <div className="mb-3">
                                 <button
                                   className="btn btn-primary btn-sm"
-                                  type="submit"
+                                  onClick={this.submitAccount.bind(this)}
                                 >
                                   Create Account
                                 </button>
                               </div>
                             </form>
+                            <div className="text-center">
+                              <h4 className="text-dark mb-4">
+                                {this.state.message}
+                              </h4>
+                            </div>
                           </div>
                         </div>
                       </div>
